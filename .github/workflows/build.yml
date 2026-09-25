@@ -1,0 +1,106 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l cmd internal)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"; echo "$unformatted"; exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Unit and integration tests
+        run: go test ./... -timeout 300s -v 2>&1 | tail -80
+
+      - name: Race detector on the engine
+        run: go test ./internal/engine -race -timeout 300s
+
+  build:
+    name: Build Windows binaries
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Verify icons regenerate reproducibly
+        run: |
+          python3 tools/make_icons.py
+          git diff --exit-code --stat -- chrome-extension/icons assets internal/app/trayicon_windows.go || {
+            echo "Generated icons differ from the committed ones."; exit 1; }
+
+      - name: Build release bundle
+        run: |
+          VERSION="${{ github.ref_type == 'tag' && github.ref_name || '1.0.0' }}"
+          VERSION="${VERSION#v}"
+          VERSION="$VERSION" bash build.sh
+
+      - name: Show artifacts
+        run: ls -lh dist
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SuperIDM-windows
+          path: |
+            dist/SuperIDM.exe
+            dist/SuperIDM-cli.exe
+            dist/SuperIDM-arm64.exe
+            dist/SuperIDM-chrome-extension-*.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Publish a GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: SuperIDM ${{ github.ref_name }}
+          draft: false
+          generate_release_notes: true
+          body: |
+            ## SuperIDM ${{ github.ref_name }}
+
+            Download `SuperIDM-v*-windows-x64.zip`, extract it, and run `SuperIDM.exe`.
+
+            Then load the browser extension:
+            `chrome://extensions` → Developer mode → **Load unpacked** →
+            select the `chrome-extension` folder from the extracted archive.
+
+            `SHA256SUMS.txt` contains the checksums for every file in this release.
+          files: |
+            dist/SuperIDM-v*-windows-x64.zip
+            dist/SuperIDM-chrome-extension-*.zip
+            dist/SuperIDM.exe
+            dist/SuperIDM-cli.exe
+            dist/SHA256SUMS.txt

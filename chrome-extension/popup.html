@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SuperIDM</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<header class="head">
+  <img src="icons/icon48.png" alt="">
+  <div class="titles">
+    <strong>Super<em>IDM</em></strong>
+    <span id="status">checking…</span>
+  </div>
+  <button id="settings" class="icon" title="Settings">⚙</button>
+</header>
+
+<section class="offline" id="offline" hidden>
+  <p><strong>SuperIDM isn't running.</strong></p>
+  <p>Start <code>SuperIDM.exe</code> and this panel will connect automatically.</p>
+  <button id="retry" class="btn">Retry</button>
+</section>
+
+<section class="quick">
+  <div class="field">
+    <input type="url" id="url" placeholder="Paste a link to download…" spellcheck="false" autocomplete="off">
+    <button id="go" class="btn primary" title="Add to SuperIDM">Download</button>
+  </div>
+  <div class="row">
+    <button id="pageFile" class="btn small">Download this page</button>
+    <button id="allLinks" class="btn small">All links</button>
+    <button id="scan" class="btn small">Scan for media</button>
+  </div>
+</section>
+
+<section class="jobs" id="jobsSection">
+  <h2>Current downloads <span id="jobCount" class="count">0</span></h2>
+  <ul id="jobs"></ul>
+  <div class="actions">
+    <button id="pauseAll" class="btn small">Pause all</button>
+    <button id="resumeAll" class="btn small">Resume all</button>
+    <button id="openApp" class="btn small">Open SuperIDM</button>
+  </div>
+</section>
+
+<section class="jobs">
+  <h2>Media on this page <span id="mediaCount" class="count">0</span></h2>
+  <ul id="media"></ul>
+  <p class="empty" id="mediaEmpty">Open a page with video or audio and press play — streams show up here.</p>
+</section>
+
+<footer class="foot">
+  <label class="check"><input type="checkbox" id="intercept"> Take over browser downloads</label>
+  <label class="check"><input type="checkbox" id="sniff"> Capture media streams</label>
+</footer>
+
+<script src="popup.js"></script>
+</body>
+</html>

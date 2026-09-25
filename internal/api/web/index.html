@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SuperIDM — Download Manager</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="logo.svg">
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <img src="logo.svg" alt="SuperIDM" class="brand-logo">
+      <div class="brand-text">
+        <span class="brand-name">Super<em>IDM</em></span>
+        <span class="brand-sub" id="brandSub">multi-connection accelerator</span>
+      </div>
+    </div>
+
+    <div class="gauges">
+      <div class="gauge">
+        <span class="gauge-value" id="gSpeed">0 B/s</span>
+        <span class="gauge-label">total speed</span>
+      </div>
+      <div class="gauge">
+        <span class="gauge-value" id="gActive">0</span>
+        <span class="gauge-label">active jobs</span>
+      </div>
+      <div class="gauge">
+        <span class="gauge-value" id="gConns">0</span>
+        <span class="gauge-label">connections</span>
+      </div>
+      <div class="gauge">
+        <span class="gauge-value" id="gPeak">0 B/s</span>
+        <span class="gauge-label">session peak</span>
+      </div>
+    </div>
+
+    <div class="topactions">
+      <button class="btn primary" id="btnAdd">+ Add download</button>
+      <button class="btn" id="btnInspect" title="Resolve a link and inspect headers">Grab link</button>
+      <button class="btn ghost" id="btnSettings" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="downloads">Downloads <span class="badge" id="badgeJobs">0</span></button>
+    <button class="tab" data-tab="media">Media capture <span class="badge" id="badgeMedia">0</span></button>
+    <button class="tab" data-tab="log">Activity log</button>
+    <button class="tab" data-tab="setup">Extension &amp; setup</button>
+  </nav>
+
+  <main>
+    <!-- ---------------------------------------------------------------- -->
+    <section class="panel active" id="panel-downloads">
+      <div class="toolbar">
+        <input type="search" id="search" placeholder="Filter downloads…" spellcheck="false">
+        <div class="spacer"></div>
+        <select id="speedLimit" title="Speed limiter">
+          <option value="0">Unlimited</option>
+          <option value="262144">256 KB/s</option>
+          <option value="524288">512 KB/s</option>
+          <option value="1048576">1 MB/s</option>
+          <option value="5242880">5 MB/s</option>
+          <option value="10485760">10 MB/s</option>
+          <option value="52428800">50 MB/s</option>
+        </select>
+        <button class="btn small" id="btnPauseAll">Pause all</button>
+        <button class="btn small" id="btnResumeAll">Resume all</button>
+        <button class="btn small danger" id="btnClearDone">Clear finished</button>
+      </div>
+
+      <div class="table-wrap">
+        <table class="jobs">
+          <thead>
+            <tr>
+              <th class="col-name">File</th>
+              <th class="col-size">Size</th>
+              <th class="col-prog">Progress</th>
+              <th class="col-speed">Speed</th>
+              <th class="col-eta">ETA</th>
+              <th class="col-status">Status</th>
+              <th class="col-act"></th>
+            </tr>
+          </thead>
+          <tbody id="jobRows"></tbody>
+        </table>
+        <div class="empty" id="emptyJobs">
+          <img src="logo.svg" alt="">
+          <h3>No downloads yet</h3>
+          <p>Paste a link, or install the SuperIDM extension and click it on any download, video or audio on the page.</p>
+          <button class="btn primary" onclick="App.openAdd()">Add your first download</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="panel" id="panel-media">
+      <div class="toolbar">
+        <strong>Captured media</strong>
+        <span class="hint">Streams and files detected by the SuperIDM browser extension.</span>
+        <div class="spacer"></div>
+        <button class="btn small" id="btnRefreshMedia">Refresh</button>
+        <button class="btn small danger" id="btnClearMedia">Clear list</button>
+      </div>
+      <div class="table-wrap">
+        <table class="jobs media">
+          <thead>
+            <tr>
+              <th class="col-name">Title</th>
+              <th class="col-size">Type</th>
+              <th class="col-speed">Quality</th>
+              <th class="col-prog">Source</th>
+              <th class="col-act"></th>
+            </tr>
+          </thead>
+          <tbody id="mediaRows"></tbody>
+        </table>
+        <div class="empty" id="emptyMedia">
+          <img src="logo.svg" alt="">
+          <h3>Nothing captured yet</h3>
+          <p>Install the extension, open a page with video or audio, and press play. Streams appear here automatically — even HLS playlists that are otherwise hard to save.</p>
+          <button class="btn primary" onclick="App.showTab('setup')">Set up the extension</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="panel" id="panel-log">
+      <div class="toolbar">
+        <strong>Activity</strong>
+        <div class="spacer"></div>
+        <button class="btn small" id="btnClearLog">Clear view</button>
+        <button class="btn small" id="btnOpenLogFile">Open log file</button>
+      </div>
+      <pre class="log" id="logView"></pre>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section class="panel" id="panel-setup">
+      <div class="grid2">
+        <div class="card">
+          <h3>1 · Install the browser extension</h3>
+          <p>The extension hands downloads and video streams over to SuperIDM.</p>
+          <ol class="steps">
+            <li>Open <code>chrome://extensions</code> in Chrome, Edge, Brave or Opera.</li>
+            <li>Turn on <strong>Developer mode</strong> (top right).</li>
+            <li>Click <strong>Load unpacked</strong> and pick the <code>chrome-extension</code> folder that came with SuperIDM.</li>
+          </ol>
+          <div class="row">
+            <button class="btn" id="btnExtensionFolder">Open extension folder</button>
+            <button class="btn" id="btnTestConn">Test connection</button>
+          </div>
+          <p class="hint" id="extStatus">Checking the local API…</p>
+        </div>
+
+        <div class="card">
+          <h3>2 · Local API</h3>
+          <p>The app listens on <code id="apiAddr">http://127.0.0.1:8765</code>. Bound to loopback only — nothing is exposed to your network.</p>
+          <dl class="kv">
+            <dt>Port</dt><dd id="cfgPort">8765</dd>
+            <dt>Config folder</dt><dd id="cfgDir">—</dd>
+            <dt>Connections per download</dt><dd id="cfgConns">64</dd>
+            <dt>Max simultaneous downloads</dt><dd id="cfgMax">3</dd>
+            <dt>Version</dt><dd id="cfgVersion">—</dd>
+          </dl>
+          <div class="row">
+            <button class="btn" id="btnOpenConfig">Open config folder</button>
+            <button class="btn" id="btnOpenLog">Open log file</button>
+          </div>
+        </div>
+
+        <div class="card wide">
+          <h3>Why SuperIDM is faster</h3>
+          <div class="features">
+            <div><h4>64 connections</h4><p>Original IDM ships 8 by default. SuperIDM opens up to 128 per file.</p></div>
+            <div><h4>Adaptive work units</h4><p>Idle connections steal work from slow ones, so no single segment can hold up the file.</p></div>
+            <div><h4>Stall recovery</h4><p>A dead socket is detected in seconds and its byte range moves to a fresh connection.</p></div>
+            <div><h4>No merge pass</h4><p>Ranges are written straight into the final file with pwrite — no temp parts to stitch.</p></div>
+            <div><h4>HLS capture</h4><p>Saves segmented streams (.m3u8) as one playable file, decrypting AES-128 playlists.</p></div>
+            <div><h4>Resume anywhere</h4><p>Close the app mid-download; every completed byte range is remembered.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span id="statusText">Ready</span>
+    <div class="spacer"></div>
+    <span id="statusRate"></span>
+    <span id="statusSaved"></span>
+  </footer>
+</div>
+
+<!-- ------------------------------------------------------------------ -->
+<div class="modal" id="modalAdd">
+  <div class="dialog">
+    <h2>Add download</h2>
+    <label>URL
+      <input type="url" id="addUrl" placeholder="https://example.com/file.zip" spellcheck="false">
+    </label>
+    <div class="two">
+      <label>Save as (optional)
+        <input type="text" id="addName" placeholder="auto-detect from the URL">
+      </label>
+      <label>Folder
+        <input type="text" id="addDir" placeholder="default download folder">
+      </label>
+    </div>
+    <details>
+      <summary>Advanced</summary>
+      <div class="two">
+        <label>Referer
+          <input type="text" id="addReferer" spellcheck="false">
+        </label>
+        <label>Cookie
+          <input type="text" id="addCookie" spellcheck="false">
+        </label>
+      </div>
+      <div class="two">
+        <label>Connections (1–128)
+          <input type="number" id="addConns" min="1" max="128" value="64">
+        </label>
+        <label>Checksum (md5:/sha256:)
+          <input type="text" id="addChecksum" spellcheck="false">
+        </label>
+      </div>
+      <label class="check"><input type="checkbox" id="addPaused"> Add paused</label>
+    </details>
+    <div class="dialog-actions">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="btnAddConfirm">Start download</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalSettings">
+  <div class="dialog wide">
+    <h2>Settings</h2>
+    <div class="settings-grid">
+      <label>Download folder
+        <input type="text" id="setDir">
+      </label>
+      <label>Connections per download <output id="outConns">64</output>
+        <input type="range" id="setConns" min="1" max="128" value="64">
+        <span class="hint">Higher is faster on most CDNs; 32–64 is a good balance.</span>
+      </label>
+      <label>Work unit size <output id="outChunk">1024 KB</output>
+        <input type="range" id="setChunk" min="64" max="16384" step="64" value="1024">
+        <span class="hint">Smaller units balance better near the end of a file.</span>
+      </label>
+      <label>Buffer per connection <output id="outBuf">256 KB</output>
+        <input type="range" id="setBuf" min="32" max="1024" step="32" value="256">
+      </label>
+      <label>Max simultaneous downloads
+        <input type="number" id="setMaxConcurrent" min="1" max="16" value="3">
+      </label>
+      <label>Retries per range
+        <input type="number" id="setRetries" min="1" max="20" value="5">
+      </label>
+      <label>Stall timeout (seconds)
+        <input type="number" id="setIdle" min="5" max="300" value="30">
+      </label>
+      <label>Local API port
+        <input type="number" id="setPort" min="1024" max="65535" value="8765">
+      </label>
+      <label class="check"><input type="checkbox" id="setCategories"> Put files in category folders (Video, Music, …)</label>
+      <label class="check"><input type="checkbox" id="setResume"> Resume unfinished downloads on start</label>
+      <label class="check"><input type="checkbox" id="setTray"> Close button minimises to the tray</label>
+      <label class="check"><input type="checkbox" id="setAutostart"> Start with Windows</label>
+      <label class="check"><input type="checkbox" id="setSniffer"> Enable media capture for the browser extension</label>
+      <label class="check"><input type="checkbox" id="setAPI"> Enable the local API</label>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn" data-close>Cancel</button>
+      <button class="btn primary" id="btnSaveSettings">Save settings</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modalInspect">
+  <div class="dialog">
+    <h2>Grab link</h2>
+    <p class="hint">Resolves redirects and reads the real file name and size before downloading.</p>
+    <div class="row">
+      <input type="url" id="inspectUrl" placeholder="https://…" spellcheck="false" style="flex:1">
+      <button class="btn primary" id="btnInspectGo">Inspect</button>
+    </div>
+    <pre class="inspect-out" id="inspectOut"></pre>
+    <div class="dialog-actions">
+      <button class="btn" data-close>Close</button>
+      <button class="btn primary" id="btnInspectDownload" disabled>Download this</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+<script src="app.js"></script>
+</body>
+</html>
