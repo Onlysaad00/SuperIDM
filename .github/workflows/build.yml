@@ -88,6 +88,32 @@ jobs:
           VERSION="${VERSION#v}"
           VERSION="$VERSION" bash build.sh
 
+      - name: Verify the binaries are real Windows executables
+        run: |
+          python3 - <<'PY'
+          import struct, sys
+          expected = {
+              "dist/SuperIDM.exe":        (0x8664, 2),   # x64, GUI
+              "dist/SuperIDM-cli.exe":    (0x8664, 3),   # x64, console
+              "dist/SuperIDM-arm64.exe":  (0xAA64, 2),   # arm64, GUI
+          }
+          failed = False
+          for path, (machine, subsystem) in expected.items():
+              with open(path, "rb") as fh:
+                  data = fh.read()
+              pe = struct.unpack_from("<I", data, 0x3C)[0]
+              if data[pe:pe+4] != b"PE\x00\x00":
+                  print(f"FAIL {path}: no PE signature"); failed = True; continue
+              got_machine = struct.unpack_from("<H", data, pe + 4)[0]
+              got_subsystem = struct.unpack_from("<H", data, pe + 24 + 68)[0]
+              magic = struct.unpack_from("<H", data, pe + 24)[0]
+              ok = (got_machine == machine and got_subsystem == subsystem and magic == 0x20B)
+              print(f"{'OK  ' if ok else 'FAIL'} {path}: machine=0x{got_machine:04x} "
+                    f"subsystem={got_subsystem} pe32plus={magic == 0x20B} size={len(data)/1048576:.1f} MiB")
+              failed |= not ok
+          sys.exit(1 if failed else 0)
+          PY
+
       - name: Show artifacts
         run: ls -lh dist
 
