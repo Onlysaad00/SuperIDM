@@ -113,9 +113,13 @@ TXT
 # 5. Checksums
 # ---------------------------------------------------------------------------
 say "Writing checksums"
-( cd "$OUT" && sha256sum SuperIDM.exe SuperIDM-cli.exe "$(basename "$EXT_ZIP")" "$(basename "$BUNDLE")" \
-    > SHA256SUMS.txt 2>/dev/null \
-  || shasum -a 256 SuperIDM.exe SuperIDM-cli.exe "$(basename "$EXT_ZIP")" "$(basename "$BUNDLE")" > SHA256SUMS.txt )
+( cd "$OUT" && { sha256sum SuperIDM.exe SuperIDM-cli.exe 2>/dev/null || shasum -a 256 SuperIDM.exe SuperIDM-cli.exe; } > SHA256SUMS.txt )
+# arm64 is optional, so add it separately.
+if [[ -f "$OUT/SuperIDM-arm64.exe" ]]; then
+  ( cd "$OUT" && { sha256sum SuperIDM-arm64.exe 2>/dev/null || shasum -a 256 SuperIDM-arm64.exe; } >> SHA256SUMS.txt )
+fi
+( cd "$OUT" && { sha256sum "$(basename "$EXT_ZIP")" "$(basename "$BUNDLE")" 2>/dev/null \
+    || shasum -a 256 "$(basename "$EXT_ZIP")" "$(basename "$BUNDLE")"; } >> SHA256SUMS.txt )
 
 say "Done. Artifacts in $OUT/"
 ls -lh "$OUT" | sed 's/^/    /'
