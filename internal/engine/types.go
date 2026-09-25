@@ -2,12 +2,11 @@
 //
 // Design goals (why this is faster than a classic 8-connection downloader):
 //
-//  1. Dynamic Adaptive Chunking (DAC): instead of splitting the file into a
-//     fixed number of segments up front, the file is treated as a pool of
-//     small work units that idle connections claim on demand. A connection
-//     that finishes early immediately grabs more work, so the slowest link
-//     never holds up the transfer. This is the same idea as a2's "range
-//     splitting", but driven by a global claim queue.
+//  1. Dynamic adaptive chunking: instead of splitting the file into a fixed
+//     number of segments up front, the file is treated as a pool of work units
+//     that idle connections claim on demand. A connection that finishes early
+//     immediately takes more work, and the pool subdivides itself as it runs
+//     short, so the slowest link cannot hold up the transfer.
 //  2. Connection count defaults to 64 (configurable 1..128) instead of the
 //     traditional 8/32.
 //  3. In-place writes with WriteAt(pwrite) into a pre-allocated file: no

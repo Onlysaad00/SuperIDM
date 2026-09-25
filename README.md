@@ -23,13 +23,15 @@ Internet Download Manager splits a file into **8 fixed segments**. SuperIDM uses
 
 | Technique | What original IDM does | What SuperIDM does |
 |---|---|---|
-| **Connections per file** | 8 by default (32 max, paid) | **64 by default, up to 128** |
-| **Work distribution** | fixed segments, one per connection | **adaptive work units** — idle connections claim more work, and the queue *subdivides itself* so the tail of the file is fetched in small pieces |
-| **Slow-connection handling** | the whole download waits for the slowest segment | a straggler's remaining bytes are **re-queued onto a healthy connection** automatically |
-| **Dead sockets** | stalls until timeout | watchdog cancels in seconds and resumes that byte range on a fresh connection |
-| **Assembling the file** | writes N temp segment files, then merges | writes straight into the final file with `pwrite` — **no merge pass** |
+| **Connections per file** | 8 by default, up to 32 in the registered version | **64 by default, up to 128** |
+| **Work distribution** | starts with 8 fixed segments; a segment judged slow is split in half and freed connections are reassigned | **one global claim queue**: any idle connection takes the next range, and the queue *subdivides itself* as it runs short, down to 1 MiB units |
+| **Ownership of a range** | a range stays with the connection that owns it until it finishes or is deemed slow | ownership is transient — the unwritten tail of any range can move to a healthy connection immediately |
+| **Dead sockets** | stalls until a timeout expires | watchdog cancels within seconds and re-queues that byte range |
+| **Assembling the file** | writes N temp segment files, then merges them | writes straight into the final file with `pwrite` — **no merge pass** |
 
-That third point is the important one. With fixed segments, total throughput is bounded by the **slowest** connection, because nobody may touch its range. SuperIDM bounds it by the **average** connection, which is where the extra speed actually comes from on real (lossy, shaped, high-latency) links.
+The third row is the important one. Any design where a range belongs to one connection until that connection is *finished or judged slow* still lets a straggler hold back the whole transfer between those decisions, and it starts from only 8 pieces — so the entire file is divided coarsely for most of the download. SuperIDM makes ownership transient from the first byte and keeps shrinking the granularity, so aggregate throughput tracks the **average** connection rather than the slowest one, and the last megabytes are split finely enough that every connection finishes within one work unit of the others.
+
+(To be fair to IDM: its segment halving and connection reassignment are real and effective. SuperIDM simply makes those two ideas the default path for every byte, and starts with 8× the connections.)
 
 ### Measured, not claimed
 

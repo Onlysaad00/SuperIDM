@@ -11,9 +11,11 @@ import (
 // ---------------------------------------------------------------------------
 //
 // A classic download manager splits a file into a fixed number of segments
-// (Internet Download Manager uses 8 by default). That has one fundamental
-// flaw: when one segment sits on a slow route, the whole download waits for
-// it, because no other connection may touch that byte range.
+// (Internet Download Manager uses 8 by default). The weakness of that design is
+// ownership: a range belongs to the connection that was handed it, and no other
+// connection may touch it until its owner finishes or is judged slow. Between
+// those decisions a single straggler holds back the whole transfer, and with
+// only 8 pieces the file stays coarsely divided for most of the download.
 //
 // SuperIDM instead treats the file as a pool of *work units* that idle
 // connections claim on demand:

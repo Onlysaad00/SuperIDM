@@ -62,6 +62,11 @@ unwritten tail (`requeue`) and, once a range has failed twice, hands half of it
 to the pool so a healthy socket can race ahead (`partial`). Because claims stay
 disjoint and writes are idempotent (same bytes, same offsets), this is safe.
 
+For context: Internet Download Manager splits a file into 8 segments by default,
+halves a segment it judges slow, and reassigns freed connections. Those ideas
+work, but they are applied *after* a decision to intervene. Here the same
+mechanism is the default path for every byte and starts from 8x the connections.
+
 ### Connections (`session.go`)
 
 One `httpSession` per worker. Each session owns a client whose transport is

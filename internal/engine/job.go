@@ -257,6 +257,13 @@ func (j *Job) run(ctx context.Context) {
 	if j.fileName == "" {
 		j.fileName = info.FileName
 	}
+	// Record how many connections this job will actually use, so the UI is
+	// honest when a server forces the single-connection path.
+	if info.Ranges && info.Size > SmallFileThreshold {
+		j.conns = j.opts.Connections
+	} else {
+		j.conns = 1
+	}
 	j.mu.Unlock()
 
 	if err := j.prepareFile(); err != nil {
