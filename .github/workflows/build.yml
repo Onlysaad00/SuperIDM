@@ -125,4 +125,5 @@ jobs:
             dist/SuperIDM-chrome-extension-*.zip
             dist/SuperIDM.exe
             dist/SuperIDM-cli.exe
+            dist/SuperIDM-arm64.exe
             dist/SHA256SUMS.txt
