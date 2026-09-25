@@ -4,6 +4,29 @@ All notable changes to SuperIDM are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [semantic versioning](https://semver.org/).
 
+## [1.0.1] — 2026-09-25
+
+### Fixed
+- Jobs that fall back to a single connection (servers without byte-range
+  support, or unknown-length streams) now report `1 connection` instead of `0`,
+  so the UI never implies acceleration that is not happening.
+- A pause arriving after the final byte of a transfer no longer leaves the job
+  sitting at 100% in the paused state; it completes.
+- The speed limiter now holds its configured cap exactly. Its sleep was
+  previously clamped, which let long waits drift forward and raised effective
+  throughput to roughly 2.6x the requested limit under many connections.
+- Session files are no longer written while the job map is being read
+  (a data race that the race detector flagged on shutdown).
+- `settings.json` is created on first run, so the file always exists to inspect
+  or edit.
+- The `--inspect`/`-o` file name argument is honoured instead of being
+  overwritten by the name derived from the URL.
+
+### Added
+- `arm64` builds are attached to GitHub releases, and CI asserts that every
+  published binary really is a PE32+ executable of the intended architecture
+  and subsystem.
+
 ## [1.0.0] — 2026-09-25
 
 First release.
