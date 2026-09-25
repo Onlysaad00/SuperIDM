@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>SuperIDM — extension options</title>
+<link rel="stylesheet" href="options.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="icons/icon128.png" alt="">
+    <div>
+      <h1>Super<em>IDM</em> Integration</h1>
+      <p class="sub">Settings for this browser extension</p>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>Connection</h2>
+    <label class="field">
+      <span>SuperIDM local API port</span>
+      <input type="number" id="port" min="1024" max="65535" value="8765">
+      <small>Must match the port shown in SuperIDM → Extension &amp; setup (default 8765).</small>
+    </label>
+    <div class="row">
+      <button class="btn primary" id="test">Test connection</button>
+      <span id="testResult" class="result"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Behaviour</h2>
+    <label class="check"><input type="checkbox" id="interceptDownloads">
+      <span><strong>Take over browser downloads</strong>
+        <small>Cancel downloads the browser starts and route them to SuperIDM with full acceleration.</small></span>
+    </label>
+    <label class="check"><input type="checkbox" id="sniffMedia">
+      <span><strong>Capture media streams</strong>
+        <small>Detect HLS/DASH playlists and progressive video or audio, so they can be saved as one file. Nothing leaves your machine — captured links are only sent to SuperIDM on 127.0.0.1.</small></span>
+    </label>
+    <label class="check"><input type="checkbox" id="showFloatingButton">
+      <span><strong>Show the floating download button over videos</strong>
+        <small>Hover a video or audio player for half a second to reveal a SuperIDM button.</small></span>
+    </label>
+    <label class="check"><input type="checkbox" id="sendCookies">
+      <span><strong>Send cookies for authenticated downloads</strong>
+        <small>Required for member-only files and streams. Cookies are passed to your own local SuperIDM instance only.</small></span>
+    </label>
+    <label class="check"><input type="checkbox" id="notifyOnComplete">
+      <span><strong>Show notifications</strong>
+        <small>Tell me when a link has been handed to SuperIDM.</small></span>
+    </label>
+  </section>
+
+  <section class="card">
+    <h2>How to use</h2>
+    <ol class="steps">
+      <li><strong>Right-click any link</strong> → “Download with SuperIDM”.</li>
+      <li><strong>Hover a video</strong> and press the SuperIDM pill, or right-click → “Download this media”.</li>
+      <li><strong>Toolbar icon</strong> lists everything on the current page, including HLS streams.</li>
+      <li><strong>Alt+S</strong> grabs the main media of the current page.</li>
+      <li><strong>Downloads are taken over</strong> automatically when that option is on.</li>
+    </ol>
+    <p class="note">SuperIDM must be running for the extension to do anything: it hands work to the desktop app, it is not a downloader by itself.</p>
+  </section>
+
+  <footer>
+    <span id="saved" class="result"></span>
+    <a href="https://github.com/Onlysaad00/SuperIDM" target="_blank" rel="noreferrer">Project home</a>
+  </footer>
+</div>
+<script src="options.js"></script>
+</body>
+</html>

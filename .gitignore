@@ -1,0 +1,19 @@
+# Build output
+/dist/
+*.exe
+*.test
+*.out
+
+# Generated locally, never committed
+*.superidm.part
+
+# Editors and OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Python bytecode from tools/
+__pycache__/
+*.pyc

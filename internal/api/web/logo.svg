@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="SuperIDM">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4f8cff"/>
+      <stop offset="1" stop-color="#7c5cff"/>
+    </linearGradient>
+    <linearGradient id="s" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".28"/>
+      <stop offset=".55" stop-color="#ffffff" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#g)"/>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#s)"/>
+  <g fill="#fff">
+    <path d="M64 26c-2.2 0-4 1.8-4 4v40.7l-13-13a4 4 0 0 0-5.7 5.7l20 20a4 4 0 0 0 5.7 0l20-20a4 4 0 0 0-5.7-5.7l-13 13V30c0-2.2-1.8-4-4-4z"/>
+    <path d="M30 88a4 4 0 0 0-4 4v6a4 4 0 0 0 4 4h68a4 4 0 0 0 4-4v-6a4 4 0 0 0-8 0v2H34v-2a4 4 0 0 0-4-4z" opacity=".92"/>
+  </g>
+</svg>

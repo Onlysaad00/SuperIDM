@@ -1,0 +1,155 @@
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - name: gofmt
+        run: |
+          unformatted=$(gofmt -l cmd internal)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not gofmt-clean:"; echo "$unformatted"; exit 1
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Unit and integration tests
+        run: go test ./... -timeout 300s -v 2>&1 | tail -80
+
+      - name: Race detector on the engine
+        run: go test ./internal/engine -race -timeout 300s
+
+  build:
+    name: Build Windows binaries
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          cache: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Verify the icon generator still produces valid assets
+        run: |
+          # The generator must run cleanly and emit valid PNG/ICO files. The
+          # bytes themselves are allowed to differ between zlib builds, so this
+          # checks structure rather than hashing.
+          cp chrome-extension/icons/icon128.png /tmp/icon128.before
+          python3 tools/make_icons.py
+          python3 - <<'PY'
+          import struct, sys, os
+          ok = True
+          for p in ("chrome-extension/icons/icon16.png",
+                    "chrome-extension/icons/icon32.png",
+                    "chrome-extension/icons/icon48.png",
+                    "chrome-extension/icons/icon128.png"):
+              with open(p, "rb") as f:
+                  head = f.read(26)
+              if head[:8] != b"\x89PNG\r\n\x1a\n" or head[25] != 6:
+                  print("not a valid RGBA PNG:", p); ok = False
+          with open("assets/superidm.ico", "rb") as f:
+              data = f.read()
+          reserved, kind, count = struct.unpack("<HHH", data[:6])
+          if reserved != 0 or kind != 1 or count < 4:
+              print("invalid ICO header:", reserved, kind, count); ok = False
+          if not os.path.getsize("internal/app/trayicon_windows.go") > 1000:
+              print("tray icon source was not generated"); ok = False
+          sys.exit(0 if ok else 1)
+          PY
+
+      - name: Build release bundle
+        run: |
+          VERSION="${{ github.ref_type == 'tag' && github.ref_name || '1.0.0' }}"
+          VERSION="${VERSION#v}"
+          VERSION="$VERSION" bash build.sh
+
+      - name: Verify the binaries are real Windows executables
+        run: |
+          python3 - <<'PY'
+          import struct, sys
+          expected = {
+              "dist/SuperIDM.exe":        (0x8664, 2),   # x64, GUI
+              "dist/SuperIDM-cli.exe":    (0x8664, 3),   # x64, console
+              "dist/SuperIDM-arm64.exe":  (0xAA64, 2),   # arm64, GUI
+          }
+          failed = False
+          for path, (machine, subsystem) in expected.items():
+              with open(path, "rb") as fh:
+                  data = fh.read()
+              pe = struct.unpack_from("<I", data, 0x3C)[0]
+              if data[pe:pe+4] != b"PE\x00\x00":
+                  print(f"FAIL {path}: no PE signature"); failed = True; continue
+              got_machine = struct.unpack_from("<H", data, pe + 4)[0]
+              got_subsystem = struct.unpack_from("<H", data, pe + 24 + 68)[0]
+              magic = struct.unpack_from("<H", data, pe + 24)[0]
+              ok = (got_machine == machine and got_subsystem == subsystem and magic == 0x20B)
+              print(f"{'OK  ' if ok else 'FAIL'} {path}: machine=0x{got_machine:04x} "
+                    f"subsystem={got_subsystem} pe32plus={magic == 0x20B} size={len(data)/1048576:.1f} MiB")
+              failed |= not ok
+          sys.exit(1 if failed else 0)
+          PY
+
+      - name: Show artifacts
+        run: ls -lh dist
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SuperIDM-windows
+          path: |
+            dist/SuperIDM.exe
+            dist/SuperIDM-cli.exe
+            dist/SuperIDM-arm64.exe
+            dist/SuperIDM-chrome-extension-*.zip
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - name: Publish a GitHub Release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          name: SuperIDM ${{ github.ref_name }}
+          draft: false
+          generate_release_notes: true
+          body: |
+            ## SuperIDM ${{ github.ref_name }}
+
+            Download `SuperIDM-v*-windows-x64.zip`, extract it, and run `SuperIDM.exe`.
+
+            Then load the browser extension:
+            `chrome://extensions` → Developer mode → **Load unpacked** →
+            select the `chrome-extension` folder from the extracted archive.
+
+            `SHA256SUMS.txt` contains the checksums for every file in this release.
+          files: |
+            dist/SuperIDM-v*-windows-x64.zip
+            dist/SuperIDM-chrome-extension-*.zip
+            dist/SuperIDM.exe
+            dist/SuperIDM-cli.exe
+            dist/SuperIDM-arm64.exe
+            dist/SHA256SUMS.txt

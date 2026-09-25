@@ -1,0 +1,70 @@
+{
+  "manifest_version": 3,
+  "name": "SuperIDM Integration",
+  "version": "1.0.0",
+  "description": "Hands every download, video and audio stream on the web to SuperIDM - the multi-connection download accelerator. Works with Chrome, Edge, Brave, Opera and Vivaldi.",
+  "author": "SuperIDM",
+  "homepage_url": "https://github.com/Onlysaad00/SuperIDM",
+  "minimum_chrome_version": "102",
+  "permissions": [
+    "contextMenus",
+    "storage",
+    "cookies",
+    "downloads",
+    "notifications",
+    "webRequest",
+    "scripting",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>",
+    "http://127.0.0.1/*",
+    "http://localhost/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "SuperIDM",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "all_frames": true,
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/*"],
+      "matches": ["http://*/*", "https://*/*"]
+    }
+  ],
+  "commands": {
+    "download-with-superidm": {
+      "suggested_key": {
+        "default": "Alt+S"
+      },
+      "description": "Download the main file or media of the current page with SuperIDM"
+    }
+  }
+}
